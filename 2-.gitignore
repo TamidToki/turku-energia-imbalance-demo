@@ -1,0 +1,11 @@
+# Generated at run time - and a guard so licence-restricted real market
+# data never gets committed (the Nord Pool spot series may not be shared).
+data/
+results/
+models/
+forecast_backtest.csv
+
+__pycache__/
+*.pyc
+.venv/
+.env
