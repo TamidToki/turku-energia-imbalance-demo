@@ -123,7 +123,15 @@ with tab_now:
 
     st.subheader("Direction of the balancing need")
     dir_df = fc_rows[["delivery_start_utc", "p_up", "p_down", "p_none"]].set_index("delivery_start_utc")
-    st.bar_chart(dir_df)
+    direction_plot = go.Figure()
+    for field, label, color in [('p_up', 'Up', '#EF553B'), ('p_down', 'Down', '#0074D9'), ('p_none', 'None', '#A0CBE8')]:
+        direction_plot.add_trace(go.Bar(x=dir_df.index.strftime('%d %b %H:%M UTC'),
+                                        y=dir_df[field], name=label, marker_color=color))
+    direction_plot.update_layout(barmode='stack', height=330, yaxis_title='Probability',
+                                 xaxis_title='Delivery quarter-hour (UTC)',
+                                 xaxis=dict(tickmode='array', tickvals=dir_df.index.strftime('%d %b %H:%M UTC')[::8], tickangle=0),
+                                 legend=dict(orientation='h', y=1.15))
+    st.plotly_chart(direction_plot, use_container_width=True)
     st.caption(
         f"Data cutoff: {fc_rows['data_cutoff_utc'].iloc[0]} - "
         f"main drivers (global): {fc_rows['top_drivers'].iloc[0]}"
