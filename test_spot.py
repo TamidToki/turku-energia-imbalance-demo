@@ -16,6 +16,19 @@ class SpotTests(unittest.TestCase):
         delivery=pd.DatetimeIndex(['2026-07-01T22:00Z'])
         self.assertFalse(_day_ahead_available(delivery,pd.Timestamp('2026-07-01T10:00Z'),SPOT_PUBLISH_OFFSET)[0])
         self.assertTrue(_day_ahead_available(delivery,pd.Timestamp('2026-07-01T16:00Z'),SPOT_PUBLISH_OFFSET)[0])
+    def test_dst_repeated_hour_and_winter_midnight(self):
+        # Both repeated local 03:00 hours share the same local delivery date.
+        d=pd.DatetimeIndex(['2026-10-25T00:00Z','2026-10-25T01:00Z'])
+        self.assertEqual(d.tz_convert('Europe/Helsinki').hour.tolist(),[3,3])
+        self.assertFalse(_day_ahead_available(d,pd.Timestamp('2026-10-24T13:59Z'),SPOT_PUBLISH_OFFSET).any())
+        self.assertTrue(_day_ahead_available(d,pd.Timestamp('2026-10-24T14:00Z'),SPOT_PUBLISH_OFFSET).all())
+        d=pd.DatetimeIndex(['2026-11-01T22:00Z']) # 2 Nov midnight in Finland
+        self.assertFalse(_day_ahead_available(d,pd.Timestamp('2026-11-01T13:59Z'),SPOT_PUBLISH_OFFSET)[0])
+        self.assertTrue(_day_ahead_available(d,pd.Timestamp('2026-11-01T14:00Z'),SPOT_PUBLISH_OFFSET)[0])
+    def test_gap_anchor_never_reads_actual_spot(self):
+        from spot_model import SpotForecaster
+        a=pd.DataFrame({'spot':[10.,np.nan],'last_imb':[50.,50.],'last_gap':[20.,20.],'actual_spot':[9999.,9999.]})
+        np.testing.assert_allclose(SpotForecaster.anchor(a),[10,30])
     def test_future_perturbation_real(self):
         try:df=load_real_inputs()
         except FileNotFoundError:self.skipTest('Real input not downloaded')
