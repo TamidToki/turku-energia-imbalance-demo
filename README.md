@@ -1,9 +1,9 @@
-# Imbalance price forecast: private research demo
+# Imbalance price forecast: research demo
 
 A 10-hour forecast of Finland's imbalance price, with P10/P50/P90,
 direction and exceptional-price probabilities, plus an operator dashboard.
-Private working draft for Team Predictable. Nothing has been sent to Turku
-Energia. No hackathon starter-package Nord Pool data is used or stored here.
+Research working draft by Team Predictable. No hackathon starter-package
+Nord Pool data is used or stored here.
 
 ## What the current result really says
 
@@ -59,8 +59,8 @@ python -m unittest -v
 streamlit run app.py
 ```
 
-ENTSO-E account and token are saved in the owner's vault. They are not in
-this repository. Downloaded data, trained models and result CSVs are
+The ENTSO-E token is kept in a private local file outside this
+repository and is never committed. Downloaded data, trained models and result CSVs are
 ignored by git and regenerated locally. Authorised source data is not
 redistributed. The Windows launcher remains untested on Windows.
 
@@ -196,3 +196,4 @@ this check when its local outputs exist.
 No new model was selected after seeing these results. Further tuning must
 use the pre-October research folds, with another fresh period reserved.
 Publication/vintage and revision bias still limit every retrospective run.
+
