@@ -20,7 +20,7 @@ import streamlit as st
 
 BASE_DIR = Path(__file__).resolve().parent
 RESULTS = BASE_DIR / "results"
-REAL_RESULTS = RESULTS / "real"
+REAL_RESULTS = RESULTS / "real_v4" if (RESULTS / "real_v4" / "forecast_test_real.csv").exists() else RESULTS / "real"
 
 st.set_page_config(page_title="Imbalance price forecast - demo", layout="wide")
 
@@ -40,10 +40,10 @@ else:
 if source == "Real Fingrid open data":
     st.warning(
         "Data source: **REAL FINGRID OPEN DATA** (Creative Commons Attribution, data.fingrid.fi) - "
-        "a backtest on published history, using only data published before each forecast origin "
-        "(conservative delays in availability.py). Not a live forecast. The Nord Pool spot price is "
-        "not open data: exceptional-price probabilities and the spot line appear only if a lawful "
-        "spot series was supplied."
+        "a retrospective benchmark on historical data, with availability assumptions "
+        "(availability.py). Not a live forecast. ENTSO-E supplies authorised day-ahead spot data. "
+        "Publication timestamps and historical forecast vintages are not verified. The nominal "
+        "80% band covered about 90% in October, so it was too wide."
     )
 else:
     st.warning(
@@ -82,7 +82,7 @@ def load_results(source: str):
 fc, bl, metrics = load_results(source)
 if fc is None:
     st.info("No results yet for this data source. Run `python backtest.py` (synthetic) or "
-            "`python real_data.py` (real, after `python fingrid_data.py --download --build`), then reload.")
+            "`python spot_experiment.py` (real, after `python fingrid_data.py --download --build`), then reload.")
     st.stop()
 
 origins = sorted(fc["forecast_origin_utc"].unique())
@@ -223,12 +223,12 @@ with tab_alerts:
 
 # --------------------------------------------------------------- tab: past
 with tab_past:
-    st.subheader("Backtest over the test period 5 Oct - 1 Nov 2026")
+    st.subheader("Retrospective benchmark: 5 Oct - 1 Nov 2026")
     wanted = ["MAE_p50_eur_mwh", "pinball_mean", "coverage_p10_p90", "brier_spike_high", "brier_spike_low", "brier_direction"]
     show = metrics.set_index("model")
     cols = [c for c in wanted if c in show.columns and show[c].notna().any()]
     st.dataframe(show[cols].style.format("{:.3f}"), use_container_width=True)
-    caption = "Coverage target is about 0.80."
+    caption = "Coverage target is about 0.80. The ML point forecast does not beat the spot-only baseline on the October retrospective benchmark."
     if source == "Real Fingrid open data":
         caption += " Real Fingrid open data, time-based backtest; exceptional-price metrics appear only with a lawful spot series."
     else:
@@ -270,19 +270,15 @@ Team Predictable after the event as a basis for discussion.
 package was only on sinceai.app during the event and the Nord Pool spot
 series in it was licensed for hackathon use only. The real source is Fingrid
 open data (CC-BY): `fingrid_data.py` downloads it with your own free API key,
-`real_data.py` trains and backtests it with time-based validation. The Nord
-Pool spot price is not open data, so exceptional-price probabilities are
-empty unless a lawful spot series is supplied.
+`spot_experiment.py` trains and backtests it with disjoint selection and calibration periods. ENTSO-E provides authorised FI day-ahead spot. October is a retrospective benchmark, already examined in earlier experiments.
 
 **Method.** Quantile gradient boosting for P10/P50/P90 (step number as a
 feature, one model for the whole 10-hour horizon), gradient boosting
 classifiers for direction and exceptional prices, persistence baseline for
-comparison. Only information available at each forecast origin is used
-(simplified publication-delay rules in `features.py`).
+comparison. Availability is approximated with conservative rules in `availability.py`. Without historical publication timestamps and vintages, this cannot prove production-time availability. The price model is selected by September MAE; probability shrinkage and interval expansion use separate data.
 
 **Challenge output.** `results/forecast_backtest.csv` follows the official
 13-column format (673 origins x 40 steps, P10-P90, direction and spike
 probabilities, optional data cutoff and top drivers).
 """
     )
-
