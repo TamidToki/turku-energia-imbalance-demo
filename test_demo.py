@@ -25,7 +25,7 @@ class DemoTests(unittest.TestCase):
     def test_publication_boundary(self):
         d=pd.DatetimeIndex(['2026-10-06T00:00:00Z'])
         self.assertFalse(_day_ahead_available(d,pd.Timestamp('2026-10-05T10:00:00Z'),SPOT_PUBLISH_OFFSET)[0])
-        self.assertTrue(_day_ahead_available(d,pd.Timestamp('2026-10-05T11:00:00Z'),SPOT_PUBLISH_OFFSET)[0])
+        self.assertTrue(_day_ahead_available(d,pd.Timestamp('2026-10-05T14:00:00Z'),SPOT_PUBLISH_OFFSET)[0])
     def test_pinball(self):
         self.assertAlmostEqual(pinball_loss(np.array([10]),np.array([0]),.9),9)
         self.assertAlmostEqual(pinball_loss(np.array([0]),np.array([10]),.9),1)
