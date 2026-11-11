@@ -7,7 +7,7 @@ been available at that moment (the challenge's "back to the future" rule):
     usable ACTUALS_DELAY after the fact (availability.py - 90 min,
     a conservative reading of the briefing's publication example)
   - spot price and day-ahead forecasts (wind/solar/consumption):
-    published the day before the delivery day (11:00 / 10:00 UTC);
+    assumed published the day before the Finnish delivery day (14:00 / 19:00 UTC);
     if the origin is earlier than that, the feature is left as NaN
     (the model handles NaN natively)
 
@@ -39,6 +39,9 @@ FEATURES = [
     "cons_f",
     "wind_ramp_3h",
     "cons_ramp_3h",
+    "last_gap",
+    "gap_mean_24h",
+    "residual_load",
     "last_imb",
     "imb_mean_24h",
     "imb_std_24h",
@@ -93,7 +96,9 @@ class SeriesView:
 
 def _day_ahead_available(delivery_ts: pd.DatetimeIndex, origin: pd.Timestamp, offset: pd.Timedelta) -> np.ndarray:
     """True where a day-ahead series for the delivery moment is published by the origin."""
-    published_at = delivery_ts.normalize() - offset
+    published_at = delivery_ts.tz_convert("Europe/Helsinki").tz_localize(None).normalize().tz_localize("UTC") - offset
+    # UTC date-based formula was early for late-evening next-local-day delivery.
+    # Date is the Finnish calendar date, represented at midnight UTC.
     return np.asarray(published_at <= origin)
 
 
@@ -161,6 +166,9 @@ def build_origin_frame(view: SeriesView, origin: pd.Timestamp, steps: int = 40) 
             "cons_f": cons_f,
             "wind_ramp_3h": wind_ramp,
             "cons_ramp_3h": cons_ramp,
+            "last_gap": last_imb - view.cols["spot_fi_eur_mwh"][k],
+            "gap_mean_24h": np.nanmean(imb[win_24h] - view.cols["spot_fi_eur_mwh"][win_24h]),
+            "residual_load": cons_f-wind_f-solar_f,
             "last_imb": last_imb,
             "imb_mean_24h": imb_mean_24h,
             "imb_std_24h": imb_std_24h,
@@ -182,4 +190,3 @@ def build_origin_frame(view: SeriesView, origin: pd.Timestamp, steps: int = 40) 
 
 def build_matrix(view: SeriesView, origins: list[pd.Timestamp]) -> pd.DataFrame:
     return pd.concat([build_origin_frame(view, o) for o in origins], ignore_index=True)
-
