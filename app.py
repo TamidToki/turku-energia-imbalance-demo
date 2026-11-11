@@ -88,8 +88,8 @@ if fc is None:
 origins = sorted(fc["forecast_origin_utc"].unique())
 origin_labels = {o: pd.Timestamp(o).strftime("%a %d %b %Y, %H:%M UTC") for o in origins}
 
-tab_now, tab_alerts, tab_past, tab_about = st.tabs(
-    ["Next 10 hours", "What to check now", "Past performance", "About"]
+tab_now, tab_alerts, tab_past, tab_fresh, tab_about = st.tabs(
+    ["Next 10 hours", "What to check now", "Past performance", "New-window check", "About"]
 )
 
 # ---------------------------------------------------------------- helpers
@@ -256,6 +256,24 @@ with tab_past:
         forecast_chart(rows_for(fc, origin_p), rows_for(bl, origin_p), f"Replay: {origin_labels[origin_p]}"),
         use_container_width=True,
     )
+
+# --------------------------------------------------------------- separate frozen check
+with tab_fresh:
+    st.subheader("Frozen new-window check: 3-10 November 2026")
+    st.info("A separate P50-only retrospective check. The recipe and protocol were frozen before downloading these Fingrid outcomes. Eight days, 192 hourly origins, 7,680 forecast rows. Historical revisions and availability assumptions still apply. This does not validate spike probabilities or intervals.")
+    fresh_dir = RESULTS / "fresh_november"
+    if (fresh_dir / "metrics.csv").exists():
+        fresh_metrics = pd.read_csv(fresh_dir / "metrics.csv")
+        st.dataframe(fresh_metrics[fresh_metrics.bucket == "all"][["model", "rows", "MAE"]].set_index("model").style.format({"MAE": "{:.2f}"}), use_container_width=True)
+        st.caption("ML beats spot-only on 7 of 8 days, not 7 November. No new recipe was selected from this result. October results in Past performance remain unchanged.")
+        day = pd.read_csv(fresh_dir / "daily.csv")
+        fig_fresh = go.Figure()
+        for name, group in day.groupby("model"):
+            fig_fresh.add_trace(go.Scatter(x=group.day, y=group.MAE, name=name, mode="lines+markers"))
+        fig_fresh.update_layout(yaxis_title="Daily MAE (EUR/MWh)", height=380, legend_orientation="h")
+        st.plotly_chart(fig_fresh, use_container_width=True)
+    else:
+        st.caption("No new-window outputs yet. See FRESH_EVALUATION_PROTOCOL.md and run fresh_evaluation.py with your API key supplied securely.")
 
 # --------------------------------------------------------------- tab: about
 with tab_about:
