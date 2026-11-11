@@ -154,3 +154,45 @@ revisions, DST boundaries, stratified errors and split embargoes. Advice was
 checked independently: the models already used native quantile loss, and
 training/inference already shared the fallback anchor. Ideas also align
 with public team descriptions; no unlicensed team code was copied.
+
+## Additional pre-October research (Argon / High review)
+
+`python pre_october_cv.py` runs three expanding-window folds with >24h
+embargoes after target deliveries. The October benchmark is physically
+excluded. Mean-fold MAE: 75%-weighted LightGBM gap 31.83; spot-only 33.58;
+simple 2-hour decaying-gap baseline 32.16; persistence 42.85. ML beats
+spot-only in all three folds but loses to decaying-gap in August. These
+are selection results, not new final-test accuracy. The small difference
+from the simple baseline is a reason to be cautious about complexity.
+
+`FRESH_EVALUATION_PROTOCOL.md` freezes a separate, eight-day Nov3-10
+point-forecast check before downloading those Fingrid outcomes. Run
+`fresh_evaluation.py` with `FINGRID_KEY_FILE` pointing to a secure local
+API-key file. It leaves v4 inputs and results untouched. Do not promote
+whichever model wins this new window or infer spike/interval skill from
+point MAE. A positive eight-day result would still not establish annual
+or production performance.
+
+### Frozen November check: result
+
+After the protocol was committed, the new Fingrid outcomes were downloaded
+and scored once. Nov3-10, 192 hourly origins / 7,680 rows:
+
+| Fixed point forecast | MAE EUR/MWh |
+| --- | ---: |
+| Selected LightGBM gap, 75% weight | **21.23** |
+| Spot-only anchor | 24.92 |
+| Simple 2h decaying gap | 24.07 |
+| Persistence | 41.14 |
+
+ML error was 14.8% lower than spot-only, 11.8% lower than decaying gap,
+and 48.4% lower than persistence. It beat spot-only on 7/8 days, losing on
+7 November. This positive new-window result does not erase October's
+failure to beat spot-only, and eight days are too few to establish stable
+performance. Only P50 point forecasts were evaluated. The existing
+October dashboard remains unchanged; the separate new-window tab shows
+this check when its local outputs exist.
+
+No new model was selected after seeing these results. Further tuning must
+use the pre-October research folds, with another fresh period reserved.
+Publication/vintage and revision bias still limit every retrospective run.
