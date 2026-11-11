@@ -135,7 +135,7 @@ then evaluate a genuinely new period. No live trading or automated action.
 - `spot_model.py`, `spot_experiment.py`: current v4 model and evaluation.
 - `model.py`, `real_data.py`, `bakeoff.py`: earlier models and comparisons.
 - `app.py`: retrospective operator dashboard with source and caveat banners.
-- `test_demo.py`, `test_real_data.py`, `test_spot.py`: 16 passing checks.
+- `test_demo.py`, `test_real_data.py`, `test_spot.py`: 18 passing checks.
 - `results/real_v4/` (local, ignored): selection table, baseline comparisons,
   metrics, split metadata, daily errors, sensitivity and stratified results,
   plus the 13-column forecast CSV and 673x40 output checks.
