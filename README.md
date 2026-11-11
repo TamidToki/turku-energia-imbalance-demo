@@ -1,167 +1,156 @@
-# Imbalance price forecast - demo for Turku Energia
+# Imbalance price forecast: private research demo
 
-A working draft of the imbalance price forecast and situational view from
-**Turku Energia's challenge at the Since AI 2026 hackathon** (Turku, 6-8 Nov
-2026), prepared as a draft for **Team Predictable** (Toki Mohammad Tahmid, Viknapergash
-Guraiah, Osman Berkay Guvenc) after the event as a basis for discussion with
-Turku Energia.
+A 10-hour forecast of Finland's imbalance price, with P10/P50/P90,
+direction and exceptional-price probabilities, plus an operator dashboard.
+Private working draft for Team Predictable. Nothing has been sent to Turku
+Energia. No hackathon starter-package Nord Pool data is used or stored here.
 
-It implements the challenge's core shape:
+## What the current result really says
 
-- **Level 1**: from every full-hour forecast origin, a 10-hour forecast
-  (40 quarter-hours): P50 price with a P10-P90 interval, probabilities for
-  the balancing-need direction (up / down / no dominating direction), and
-  probabilities for exceptional prices (> spot + 50 and < spot - 50 EUR/MWh),
-  written in the briefing-derived 13-column `forecast_backtest.csv` format.
-- **Level 2**: a Streamlit situational view for an energy expert - what to
-  check now and in the next 10 hours, alerts with plain-language reasoning,
-  and past performance with the viewing time movable into the past.
-- **Data availability rule**: every forecast uses only information that
-  would have been published at that forecast origin (simplified publication
-  delays in `features.py`; the real package used the binding per-row column
-  `first_usable_origin_utc`).
+The spot-enabled v4 experiment was run on 11 November 2026 using Fingrid
+public history and authorised ENTSO-E Finland day-ahead prices.
 
-## What data this demo uses (please read)
+| October retrospective benchmark | LightGBM gap model, calibrated | Persistence | Spot-only anchor |
+| --- | ---: | ---: | ---: |
+| P50 MAE, EUR/MWh (lower is better) | 30.69 | 41.40 | **30.25** |
+| Mean P10/P90 pinball (lower) | **8.02** | 14.77 | 9.41 |
+| P10-P90 coverage (nominal 80%) | 90.1% | 77.2% | 78.1% |
+| High-spike Brier (lower) | 0.07512 | 0.07548 | 0.07548 |
+| Low-spike Brier (lower) | 0.05095 | 0.06275 | 0.06275 |
+| Direction Brier, 3-class sum (lower) | 0.43639 | 0.45815 | 0.45815 |
 
-Two data sources, chosen in the dashboard sidebar.
+**The ML point forecast beats persistence by about 26%, but does not beat
+simply forecasting the known spot price on October MAE.** Its quantile
+loss is better than both baselines. High-spike skill is essentially absent;
+low-spike and direction skill are modest. These are not trading results.
 
-**1. Real Fingrid open data (Creative Commons Attribution)** - the default
-once downloaded. `fingrid_data.py` fetches eight verified 15-minute datasets
-from data.fingrid.fi with your own free API key and builds
-`data/real_inputs.csv`; `real_data.py` trains and backtests with the
-challenge's time-based setup: training origins 3 Jun - 3 Oct 2026, then the
-validation period 7 Sep - 4 Oct and the test period 5 Oct - 1 Nov (673
-hourly origins), model vs the persistence baseline. Every forecast uses only
-data published before its origin (conservative delays in `availability.py`).
+The nominal 80% interval is too wide overall (90.1% coverage), yet catches
+only 37.8% of extreme-price outcomes. Extreme-outcome MAE is 109.57 EUR/MWh.
+So a good overall average does not mean reliable protection against spikes.
+When future spot is not yet published, MAE rises to 41.24 (272 forecast
+rows), compared with 30.58 when spot is known (26,648 rows).
 
-**2. Synthetic sample data**, generated locally by `sample_data.py`. It
-imitates the shape of the real series but every number is invented. Metrics
-on it say something about the *code*, not about real forecasting skill.
+October was examined in earlier versions. It is a **retrospective
+benchmark**, not an untouched final test. No claim of future accuracy,
+production readiness, competition rank or profitability is made.
 
-Still unavailable, on purpose:
+## Reproduce locally
 
-1. **Nord Pool day-ahead spot price** was licensed to Turku Energia for
-   hackathon use only. It is not here and must not be added from unofficial
-   sources. Without it there are no honest exceptional-price labels, so
-   `p_spike_high` / `p_spike_low` stay EMPTY rather than faked. Supply a
-   lawful spot CSV (`timestamp_utc,value`) once via
-   `python fingrid_data.py --build --spot your_spot.csv` to enable them
-   (`data/` is git-ignored, so it cannot be committed by accident).
-2. **15-minute-updated forecasts** (Fingrid 166/245) and **archived forecast
-   vintages**: the public API returns only the latest value per
-   quarter-hour, so backtesting with them would leak future information.
-   Vintages would have to come from Turku Energia or Fingrid.
-
-The imbalance price method changed on 1 June 2026 (volume-weighted
-mFRR+aFRR); the real pipeline trains only on data from 1 June 2026 onward.
-
-## Quick start
-
-Windows: install Python 3.11+, download and unzip this repo, then double-click
-`start_windows.bat`. It installs dependencies, runs the demo, checks the CSV
-and opens the dashboard. Internet is needed for dependency installation.
-The app runs locally, not on a public website.
-
+Python 3.10+:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-python sample_data.py            # generates the synthetic data (data/, git-ignored)
-python backtest.py               # trains, forecasts the test period, scores vs baseline
-python -m unittest -v            # checks horizon, publication boundary and future-actual isolation
-python validate_demo.py          # local format check, not the official validator
-streamlit run app.py             # situational view at http://localhost:8501
+# Free Fingrid key: register at https://data.fingrid.fi/en/instructions
+# Set FINGRID_API_KEY in your environment or a local .env (git-ignored).
+python fingrid_data.py --download
+
+# ENTSO-E: register, request REST API access, generate token under My Account.
+# Put the token in a private local file OUTSIDE this repo. Never commit it.
+# Set ENTSOE_TOKEN_FILE to that file's path. The downloader does not print it.
+python entsoe_data.py
+python fingrid_data.py --build --spot data/entsoe/spot_fi.csv
+python spot_experiment.py
+python -m unittest -v
+streamlit run app.py
 ```
 
-Real data (one extra, one-time step): register for a free Fingrid API key
-(the numbered steps are in the `fingrid_data.py` docstring), then:
+ENTSO-E account and token are saved in the owner's vault. They are not in
+this repository. Downloaded data, trained models and result CSVs are
+ignored by git and regenerated locally. Authorised source data is not
+redistributed. The Windows launcher remains untested on Windows.
 
-```bash
-export FINGRID_API_KEY="your-key"   # Windows: set FINGRID_API_KEY=your-key
-                                     # or one line in a local .env (git-ignored)
-python fingrid_data.py --download --build   # fetch 8 datasets, build real_inputs.csv
-python real_data.py                          # real backtest, model vs baseline
-streamlit run app.py                         # sidebar now offers the real source
-```
+For a synthetic pipeline check only: `python backtest.py`, then
+`streamlit run app.py`. Synthetic metrics are not real forecasting skill.
+The older `real_data.py` path remains for comparison, but v4 is the
+recommended research experiment and the dashboard prefers its outputs.
 
-Never commit the key or any real market data: `data/` and `.env` are
-git-ignored on purpose.
+## Method and chronological split
 
-`backtest.py` mirrors the official set-up: training origins 3 Jun - 3 Oct 2026 (every second hour),
-then 673 hourly forecast origins over the test period 5 Oct - 1 Nov 2026,
-and writes `results/forecast_backtest.csv` in the briefing-derived format (not checked with the unavailable official validator) plus
-`results/metrics_summary.csv` (MAE, mean pinball loss for P10/P90, interval
-coverage, Brier scores for exceptional prices and direction - model vs the
-persistence baseline, the same comparison the challenge used).
+- Training origins: 3 June through 30 August 2026 00:00 UTC, every 2 hours.
+- Model selection: 1 September through 18 September 23:00 UTC, hourly.
+- Calibration: 21 September through 2 October 23:00 UTC, hourly.
+- Retrospective benchmark: 4 October 21:00 UTC through 1 November 21:00 UTC,
+  673 hourly origins, each with 40 quarter-hours (26,920 forecast rows).
+- Assertions require over 24 hours between each period's final target
+  delivery and the next period's first origin. No random splits.
 
-## Repository layout
+Compare HGB absolute-price, HGB gap-to-spot, LightGBM gap-to-spot, a fixed
+50/50 HGB blend, and an HGB gap variant excluding all daily forecasts.
+LightGBM gap wins September selection (MAE 43.10 versus spot-only 47.26
+and persistence 68.51). Differences between ML variants are small, not
+proof of one library's universal superiority.
 
-| File | Purpose |
-| --- | --- |
-| `sample_data.py` | Synthetic data generator (clearly labelled, reproducible, seed fixed) |
-| `availability.py` | The data availability rule: conservative publication delays shared by both data sources |
-| `features.py` | Feature engineering; applies the availability rule per forecast origin |
-| `model.py` | Quantile gradient boosting (P10/P50/P90), direction & spike classifiers, persistence baseline, challenge metrics |
-| `backtest.py` | Synthetic-data backtest: trains, forecasts 673 origins, scores model vs baseline |
-| `fingrid_data.py` | Real Fingrid open data: throttled API client, dataset registry, `real_inputs.csv` builder + quality report |
-| `real_data.py` | Real-data backtest: trains on 1 Jun - 4 Oct, scores validation and test periods vs baseline, conformal-calibrates the band |
-| `bakeoff.py` | Library bake-off (HGB vs LightGBM vs XGBoost vs blends) on a clean out-of-time split - why the model above was chosen |
-| `app.py` | Streamlit situational view (next 10 h, alerts, past performance, time travel, data-source switch) |
+The target is imbalance minus the **available anchor**. Where delivery
+spot is known, that is spot. Otherwise it is the latest historical spot,
+used consistently in both training and inference. Quantiles use native
+pinball loss. Crossing quantiles are ordered. Direction and spike models
+are HGB classifiers. Selection-period Brier chooses probability shrinkage
+toward training priors. A separate calibration period supplies a scalar
+band expansion. It is a heuristic, not a finite-sample conformal guarantee:
+serial dependence and overlapping targets violate ordinary IID assumptions.
 
-`data/`, `results/`, `models/` are git-ignored on purpose: generated at run
-time, and a guard so no real market data (which may be licence-restricted)
-ever gets committed.
+No classifier probabilities are fed into the quantile models, avoiding
+in-sample stacking leakage. The model is NOT refit on calibration or October.
 
-## Real-data results (11 Nov 2026 run)
+## Availability audit and limits
 
-Time-based backtest on Fingrid open data (14,880 quarter-hours, zero gaps
-in the grid): train 3 Jun - 3 Oct, validation 7 Sep - 4 Oct, test
-5 Oct - 1 Nov 2026 (673 origins). Model = gradient-boosted quantile trees.
+- Historical settlement features use a 90-minute delay from delivery start.
+  This is a conservative assumption, not proof that final revised values
+  existed at that time. Final-history revision bias remains unmeasured.
+- Day-ahead spot becomes usable at D-1 14:00 UTC, based on the **Finnish
+  local delivery date**, not the UTC date. Daily forecasts use D-1 19:00 UTC.
+  These are assumptions; exceptional publication delays are not archived.
+- All indexing is a continuous UTC quarter-hour grid. Local dates are used
+  only for day-ahead availability. DST and late-evening boundaries are tested.
+- Fingrid's public history lacks per-row publication timestamps and past
+  forecast vintages. Even once-daily forecast series may have revisions.
+  Excluding them is a sensitivity check, not a complete cure for final-history
+  bias. The strict variant's October metrics are in `strict_sensitivity.json`;
+  it was NOT promoted based on October results.
+- Perturbation tests change unavailable future actuals and unpublished
+  next-local-day spot/forecasts. Available features must remain unchanged.
+  These tests check code behavior, not unknowable historic publication facts.
+- Fingrid 376 down-regulation volumes are negative. Direction compares
+  activation magnitudes. The earlier almost-perfect direction result was a
+  label bug and is withdrawn. One missing activation quarter remains; price
+  and spot have no missing quarters on the 14,880-row model input grid.
+- Comparing these scores with teams' official scores is not apples-to-apples:
+  sources, splits, publication rules and baselines differ.
 
-| Period | Model | MAE P50 | Pinball mean | P10-P90 coverage | Direction Brier |
-| --- | --- | --- | --- | --- | --- |
-| validation | model | 35.6 | 8.66 | 0.802 | 0.206 |
-| validation | baseline | 70.0 | 25.40 | 0.692 | 0.487 |
-| test | model | 32.0 | 7.65 | 0.842 | 0.492 |
-| test | baseline | 41.4 | 14.68 | 0.798 | 0.458 |
+**Needed before a production claim:** archive as-of data in real time,
+measure revisions and publication delays, freeze a model prospectively,
+then evaluate a genuinely new period. No live trading or automated action.
 
-Spike metrics are not reported until a lawful spot series is wired in
-(ENTSO-E day-ahead, registration pending). Coverage is conformal-calibrated
-(`gbm_calibrated` rows in `results/real/metrics_summary_real.csv`).
+## Files
 
-Model selection honesty note (`bakeoff.py`): the challenge's validation
-window overlaps its training window, so XGBoost looked best there
-(MAE 23.7) but collapsed on the untouched test window (42.6 vs baseline
-41.4). Selecting on a clean out-of-time split (train to 31 Aug, select on
-Sep-Oct) picked sklearn's gradient boosting instead - that is the model
-above. Bug fixed the same day: Fingrid down-regulation volumes are stored
-negative; comparing magnitudes gives the true 60/39 down/up direction mix.
+- `entsoe_data.py`: authenticated, cached FI day-ahead price downloader;
+  sparse change-point curves are expanded at their declared resolution.
+- `fingrid_data.py`: throttled public-data downloader and input quality report.
+- `availability.py`, `features.py`: availability assumptions and features.
+- `spot_model.py`, `spot_experiment.py`: current v4 model and evaluation.
+- `model.py`, `real_data.py`, `bakeoff.py`: earlier models and comparisons.
+- `app.py`: retrospective operator dashboard with source and caveat banners.
+- `test_demo.py`, `test_real_data.py`, `test_spot.py`: 16 passing checks.
+- `results/real_v4/` (local, ignored): selection table, baseline comparisons,
+  metrics, split metadata, daily errors, sensitivity and stratified results,
+  plus the 13-column forecast CSV and 673x40 output checks.
 
-## Honest limits
+## Sources and review
 
-- Metrics on the sample data are pipeline checks, not accuracy claims.
-- Real-data metrics are a genuine time-based backtest on published Fingrid
-  history, but the publication times are conservative ASSUMPTIONS
-  (`availability.py`): the public API exposes neither per-row publication
-  timestamps nor forecast vintages, so they cannot be exact. The starter
-  package's binding `first_usable_origin_utc` was only inside sinceai.app.
-- Without a lawful spot series there are no exceptional-price labels:
-  spike probabilities are empty (NaN), not zero, and spike metrics are not
-  reported.
-- `top_drivers` are training-sample permutation importances, not
-  per-forecast explanations or causal drivers.
-- Alert thresholds and wording in the dashboard are placeholders to tune
-  with Turku Energia's experts.
-- The imbalance price method changed on 1 June 2026 (volume-weighted
-  mFRR+aFRR). Older data is not directly comparable; the real pipeline
-  trains from 1 June 2026 only, and the synthetic generator is only
-  illustrative, not an implementation of the settlement formula.
+Fingrid: https://data.fingrid.fi (CC-BY, attribution required).
+ENTSO-E: https://transparency.entsoe.eu, API https://web-api.tp.entsoe.eu/api.
+REST API guide: https://transparencyplatform.zendesk.com/hc/en-us/articles/15692855254548.
+Data remain private and source terms still apply. Access is not permission
+to redistribute a licensed starter package.
 
-## Licence
-
-Private development draft. No open-source licence has been selected. No market data is included or redistributed.
-Fingrid open data: Creative Commons Attribution, source data.fingrid.fi.
-This project is not affiliated with or endorsed by Turku Energia or Since AI.
-
+Gemini was consulted on the problem description and generic metrics only,
+not credentials or source data. Useful review points included historical
+revisions, DST boundaries, stratified errors and split embargoes. Advice was
+checked independently: the models already used native quantile loss, and
+training/inference already shared the fallback anchor. Ideas also align
+with public team descriptions; no unlicensed team code was copied.
