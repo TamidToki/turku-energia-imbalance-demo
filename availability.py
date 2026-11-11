@@ -14,19 +14,17 @@ ACTUALS_DELAY (90 min)
     that started at least 90 minutes before the origin was published at
     least 15 minutes before it, so this satisfies the rule with margin.
 
-SPOT_PUBLISH_OFFSET (13 h)
-    Nord Pool day-ahead spot for delivery day D is published about 14:00
-    Finnish time on D-1 (briefing example: 2026-05-31T11:00:00Z for
-    delivery on 1 June, summer time). Modelled as delivery-day midnight
-    UTC minus 13 h. Only relevant when a lawfully obtained spot series is
-    supplied (spot is not open data).
+SPOT_PUBLISH_OFFSET (10 h)
+    Use the Finnish LOCAL delivery date at midnight, represented in UTC,
+    minus 10 hours: D-1 14:00 UTC. This is a conservative operational
+    assumption, not an observed publication timestamp. It fixes the v3
+    UTC-date boundary error for late-evening next-local-day delivery.
 
-FORECAST_PUBLISH_OFFSET (8 h)
-    Fingrid's once-a-day forecasts (datasets 165, 246, 247) are published
-    once per day; the API does not say when. Conservatively assumed usable
-    from D-1 16:00 UTC for delivery day D. If the true publication time is
-    earlier, some usable hours are wasted, but nothing is used before
-    publication.
+FORECAST_PUBLISH_OFFSET (5 h)
+    Same local-date convention, minus 5 hours: D-1 19:00 UTC.
+    The public API does not provide publication/vintage metadata. These
+    once-daily series may still contain revisions. Excluding all of them
+    is evaluated as a sensitivity check; delays alone cannot prove no leak.
 
 Note on vintages: the 15-minute-updated forecast series (Fingrid datasets
 166, 245) are NOT used. The API returns only the latest value per
@@ -40,5 +38,5 @@ from __future__ import annotations
 import pandas as pd
 
 ACTUALS_DELAY = pd.Timedelta(minutes=90)
-SPOT_PUBLISH_OFFSET = pd.Timedelta(hours=13)
-FORECAST_PUBLISH_OFFSET = pd.Timedelta(hours=8)
+SPOT_PUBLISH_OFFSET = pd.Timedelta(hours=10)
+FORECAST_PUBLISH_OFFSET = pd.Timedelta(hours=5)
