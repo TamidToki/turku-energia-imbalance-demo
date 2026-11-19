@@ -2,7 +2,7 @@
 
 A 10-hour forecast of Finland's imbalance price, with P10/P50/P90,
 direction and exceptional-price probabilities, plus an operator dashboard.
-Research working draft by Team Predictable. No hackathon starter-package
+Research working draft by Toki Mohammad Tahmid. No hackathon starter-package
 Nord Pool data is used or stored here.
 
 ## What the current result really says
