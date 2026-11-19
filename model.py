@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 
+from availability import ACTUALS_DELAY
 from features import FEATURES, FEATURE_LABELS
 
 GB_KW = dict(max_iter=100, learning_rate=0.06, early_stopping=False, validation_fraction=0.1, random_state=0)
@@ -113,7 +114,7 @@ class ImbalanceForecaster:
                 "p_none": 1 - np.round(p_up, 4) - np.round(p_down, 4),
                 "p_spike_high": np.round(p_hi, 4),
                 "p_spike_low": np.round(p_lo, 4),
-                "data_cutoff_utc": (origin - pd.Timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "data_cutoff_utc": (origin - ACTUALS_DELAY).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "top_drivers": drivers,
             }
         )
@@ -163,7 +164,7 @@ class PersistenceBaseline:
                 "p_none": self.dir_shares[2],
                 "p_spike_high": round(self.spike_hi_share, 4),
                 "p_spike_low": round(self.spike_lo_share, 4),
-                "data_cutoff_utc": (origin - pd.Timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "data_cutoff_utc": (origin - ACTUALS_DELAY).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "top_drivers": "",
             }
         )
@@ -197,4 +198,3 @@ def metric_table(df: pd.DataFrame) -> dict:
     probs = df[["p_up", "p_down", "p_none"]].to_numpy()
     out["brier_direction"] = float(np.mean(np.sum((probs - onehot) ** 2, axis=1)))
     return out
-
