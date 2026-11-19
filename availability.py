@@ -16,12 +16,14 @@ ACTUALS_DELAY (90 min)
 
 SPOT_PUBLISH_OFFSET (10 h)
     Use the Finnish LOCAL delivery date at midnight, represented in UTC,
-    minus 10 hours: D-1 14:00 UTC. This is a conservative operational
+    minus 10 hours: D-1 14:00 Finnish local time (12:00 UTC in winter, 11:00 UTC in summer).
+    This is a conservative operational
     assumption, not an observed publication timestamp. It fixes the v3
     UTC-date boundary error for late-evening next-local-day delivery.
 
 FORECAST_PUBLISH_OFFSET (5 h)
-    Same local-date convention, minus 5 hours: D-1 19:00 UTC.
+    Same local-date convention, minus 5 hours: D-1 19:00 Finnish local time (17:00 UTC
+    in winter, 16:00 UTC in summer).
     The public API does not provide publication/vintage metadata. These
     once-daily series may still contain revisions. Excluding all of them
     is evaluated as a sensitivity check; delays alone cannot prove no leak.
