@@ -54,7 +54,7 @@ else:
 
 st.title("Imbalance price forecast - situational view (demo)")
 st.caption(
-    "Draft for Turku Energia's imbalance price challenge, Team Predictable. "
+    "Draft for Turku Energia's imbalance price challenge, Toki Mohammad Tahmid. "
     "Forecast: P50 with P10-P90 interval, 40 quarter-hours ahead from each full-hour origin."
 )
 
@@ -281,7 +281,7 @@ with tab_about:
         """
 **What this is.** A working draft of the imbalance price forecast and
 situational view from Turku Energia's challenge at Since AI 2026, prepared for
-Team Predictable after the event as a basis for discussion.
+Toki Mohammad Tahmid after the event as a basis for discussion.
 
 **Data.** Two sources, chosen in the sidebar. Synthetic sample data
 (generated locally by `sample_data.py`) exists because the hackathon starter
