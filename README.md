@@ -102,8 +102,8 @@ in-sample stacking leakage. The model is NOT refit on calibration or October.
 - Historical settlement features use a 90-minute delay from delivery start.
   This is a conservative assumption, not proof that final revised values
   existed at that time. Final-history revision bias remains unmeasured.
-- Day-ahead spot becomes usable at D-1 14:00 UTC, based on the **Finnish
-  local delivery date**, not the UTC date. Daily forecasts use D-1 19:00 UTC.
+- Day-ahead spot becomes usable at D-1 14:00 Finnish local time, based on the **Finnish
+  local delivery date**, not the UTC date. Daily forecasts use D-1 19:00 Finnish local time.
   These are assumptions; exceptional publication delays are not archived.
 - All indexing is a continuous UTC quarter-hour grid. Local dates are used
   only for day-ahead availability. DST and late-evening boundaries are tested.
@@ -196,4 +196,3 @@ this check when its local outputs exist.
 No new model was selected after seeing these results. Further tuning must
 use the pre-October research folds, with another fresh period reserved.
 Publication/vintage and revision bias still limit every retrospective run.
-
