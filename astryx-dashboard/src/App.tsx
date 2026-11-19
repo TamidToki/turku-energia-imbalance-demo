@@ -427,7 +427,7 @@ function About() {
       <Heading level={3}>About this demo</Heading>
       <Text type="body">
         This is an Astryx (Meta's open-source design system, React 19) front-end for the
-        10-hour imbalance price forecast research demo by Team Predictable. It mirrors the
+        10-hour imbalance price forecast research demo by Toki Mohammad Tahmid. It mirrors the
         Streamlit situational view in this repository (app.py): P50 forecast with P10-P90
         interval, direction of the balancing need, exceptional-price probabilities, and the
         retrospective benchmark.
@@ -477,10 +477,10 @@ export default function App() {
           <VStack gap={6}>
             <HStack gap={3} vAlign="center">
               <Heading level={1}>Imbalance price forecast - situational view</Heading>
-              <Badge variant="purple" label="Astryx UI demo" />
+              <Badge variant="purple" label="Forecast dashboard" />
             </HStack>
             <Text type="supporting" color="secondary">
-              Draft for Turku Energia's imbalance price challenge, Team Predictable. Forecast:
+              Draft for Turku Energia's imbalance price challenge, Toki Mohammad Tahmid. Forecast:
               P50 with P10-P90 interval, 40 quarter-hours ahead from each full-hour origin.
             </Text>
             {data ? (
@@ -521,4 +521,4 @@ export default function App() {
       }
     />
   );
-}
+      }
